@@ -1,14 +1,15 @@
-import { State } from './state.js';
-import * as board from './board.js';
-import { write as fenWrite } from './fen.js';
-import { Config, configure, applyAnimation } from './config.js';
-import { anim, render } from './anim.js';
-import { cancel as dragCancel, dragNewPiece } from './drag.js';
-import { DrawShape } from './draw.js';
-import { explosion } from './explosion.js';
-import * as cg from './types.js';
+import { State } from './state'
+import * as board from './board'
+import { write as fenWrite } from './fen'
+import { Config, configure } from './config'
+import { anim, render } from './anim'
+import { cancel as dragCancel, dragNewPiece } from './drag'
+import { DrawShape } from './draw'
+import explosion from './explosion'
+import * as cg from './types'
 
 export interface Api {
+
   // reconfigure the instance. Accepts all config options, except for viewOnly & drawable.visible.
   // board will be animated accordingly, if animations are enabled.
   set(config: Config): void;
@@ -73,20 +74,21 @@ export interface Api {
 
   // unbinds all events
   // (important for document-wide events like scroll and mousemove)
-  destroy: cg.Unbind;
+  destroy: cg.Unbind
 }
 
 // see API types and documentations in dts/api.d.ts
 export function start(state: State, redrawAll: cg.Redraw): Api {
-  function toggleOrientation(): void {
+
+  function toggleOrientation() {
     board.toggleOrientation(state);
     redrawAll();
-  }
+  };
 
   return {
-    set(config): void {
+
+    set(config) {
       if (config.orientation && config.orientation !== state.orientation) toggleOrientation();
-      applyAnimation(state, config);
       (config.fen ? anim : render)(state => configure(state, config), state);
     },
 
@@ -96,11 +98,11 @@ export function start(state: State, redrawAll: cg.Redraw): Api {
 
     toggleOrientation,
 
-    setPieces(pieces): void {
+    setPieces(pieces) {
       anim(state => board.setPieces(state, pieces), state);
     },
 
-    selectSquare(key, force): void {
+    selectSquare(key, force) {
       if (key) anim(state => board.selectSquare(state, key, force), state);
       else if (state.selected) {
         board.unselect(state);
@@ -108,15 +110,15 @@ export function start(state: State, redrawAll: cg.Redraw): Api {
       }
     },
 
-    move(orig, dest): void {
+    move(orig, dest) {
       anim(state => board.baseMove(state, orig, dest), state);
     },
 
-    newPiece(piece, key): void {
+    newPiece(piece, key) {
       anim(state => board.baseNewPiece(state, piece, key), state);
     },
 
-    playPremove(): boolean {
+    playPremove() {
       if (state.premovable.current) {
         if (anim(board.playPremove, state)) return true;
         // if the premove couldn't be played, redraw to clear it up
@@ -125,7 +127,7 @@ export function start(state: State, redrawAll: cg.Redraw): Api {
       return false;
     },
 
-    playPredrop(validate): boolean {
+    playPredrop(validate) {
       if (state.predroppable.current) {
         const result = board.playPredrop(state, validate);
         state.dom.redraw();
@@ -134,54 +136,48 @@ export function start(state: State, redrawAll: cg.Redraw): Api {
       return false;
     },
 
-    cancelPremove(): void {
+    cancelPremove() {
       render(board.unsetPremove, state);
     },
 
-    cancelPredrop(): void {
+    cancelPredrop() {
       render(board.unsetPredrop, state);
     },
 
-    cancelMove(): void {
-      render(state => {
-        board.cancelMove(state);
-        dragCancel(state);
-      }, state);
+    cancelMove() {
+      render(state => { board.cancelMove(state); dragCancel(state); }, state);
     },
 
-    stop(): void {
-      render(state => {
-        board.stop(state);
-        dragCancel(state);
-      }, state);
+    stop() {
+      render(state => { board.stop(state); dragCancel(state); }, state);
     },
 
-    explode(keys: cg.Key[]): void {
+    explode(keys: cg.Key[]) {
       explosion(state, keys);
     },
 
-    setAutoShapes(shapes: DrawShape[]): void {
-      render(state => (state.drawable.autoShapes = shapes), state);
+    setAutoShapes(shapes: DrawShape[]) {
+      render(state => state.drawable.autoShapes = shapes, state);
     },
 
-    setShapes(shapes: DrawShape[]): void {
-      render(state => (state.drawable.shapes = shapes), state);
+    setShapes(shapes: DrawShape[]) {
+      render(state => state.drawable.shapes = shapes, state);
     },
 
-    getKeyAtDomPos(pos): cg.Key | undefined {
+    getKeyAtDomPos(pos) {
       return board.getKeyAtDomPos(pos, board.whitePov(state), state.dom.bounds());
     },
 
     redrawAll,
 
-    dragNewPiece(piece, event, force): void {
-      dragNewPiece(state, piece, event, force);
+    dragNewPiece(piece, event, force) {
+      dragNewPiece(state, piece, event, force)
     },
 
-    destroy(): void {
+    destroy() {
       board.stop(state);
       state.dom.unbind && state.dom.unbind();
       state.dom.destroyed = true;
-    },
+    }
   };
 }

@@ -1,20 +1,19 @@
-import { HeadlessState } from './state.js';
-import { setVisible, createEl } from './util.js';
-import { colors, files, ranks, Elements } from './types.js';
-import { createElement as createSVG, setAttributes } from './svg.js';
+import { State } from './state'
+import { colors, setVisible, createEl } from './util'
+import { files, ranks } from './types'
+import { createElement as createSVG } from './svg'
+import { Elements } from './types'
 
-export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
+export default function wrap(element: HTMLElement, s: State, relative: boolean): Elements {
+
   // .cg-wrap (element passed to Chessground)
-  //   cg-container
-  //     cg-board
-  //     svg.cg-shapes
-  //       defs
-  //       g
-  //     svg.cg-custom-svgs
-  //       g
-  //     coords.ranks
-  //     coords.files
-  //     piece.ghost
+  //   cg-helper (12.5%)
+  //     cg-container (800%)
+  //       cg-board
+  //       svg
+  //       coords.ranks
+  //       coords.files
+  //       piece.ghost
 
   element.innerHTML = '';
 
@@ -24,44 +23,32 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
   // for a slight performance improvement! (avoids recomputing style)
   element.classList.add('cg-wrap');
 
-  for (const c of colors) element.classList.toggle('orientation-' + c, s.orientation === c);
+  colors.forEach(c => element.classList.toggle('orientation-' + c, s.orientation === c));
   element.classList.toggle('manipulable', !s.viewOnly);
 
+  const helper = createEl('cg-helper');
+  element.appendChild(helper);
   const container = createEl('cg-container');
-  element.appendChild(container);
+  helper.appendChild(container);
 
   const board = createEl('cg-board');
   container.appendChild(board);
 
   let svg: SVGElement | undefined;
-  let customSvg: SVGElement | undefined;
-  if (s.drawable.visible) {
-    svg = setAttributes(createSVG('svg'), {
-      class: 'cg-shapes',
-      viewBox: '-4 -4 8 8',
-      preserveAspectRatio: 'xMidYMid slice',
-    });
+  if (s.drawable.visible && !relative) {
+    svg = createSVG('svg');
     svg.appendChild(createSVG('defs'));
-    svg.appendChild(createSVG('g'));
-    customSvg = setAttributes(createSVG('svg'), {
-      class: 'cg-custom-svgs',
-      viewBox: '-3.5 -3.5 8 8',
-      preserveAspectRatio: 'xMidYMid slice',
-    });
-    customSvg.appendChild(createSVG('g'));
     container.appendChild(svg);
-    container.appendChild(customSvg);
   }
 
   if (s.coordinates) {
     const orientClass = s.orientation === 'black' ? ' black' : '';
-    const ranksPositionClass = s.ranksPosition === 'left' ? ' left' : '';
-    container.appendChild(renderCoords(ranks, 'ranks' + orientClass + ranksPositionClass));
+    container.appendChild(renderCoords(ranks, 'ranks' + orientClass));
     container.appendChild(renderCoords(files, 'files' + orientClass));
   }
 
   let ghost: HTMLElement | undefined;
-  if (s.draggable.showGhost) {
+  if (s.draggable.showGhost && !relative) {
     ghost = createEl('piece', 'ghost');
     setVisible(ghost, false);
     container.appendChild(ghost);
@@ -70,19 +57,17 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
   return {
     board,
     container,
-    wrap: element,
     ghost,
-    svg,
-    customSvg,
+    svg
   };
 }
 
-function renderCoords(elems: readonly string[], className: string): HTMLElement {
+function renderCoords(elems: any[], className: string): HTMLElement {
   const el = createEl('coords', className);
   let f: HTMLElement;
-  for (const elem of elems) {
+  for (let i in elems) {
     f = createEl('coord');
-    f.textContent = elem;
+    f.textContent = elems[i];
     el.appendChild(f);
   }
   return el;

@@ -1,7 +1,7 @@
-import { State } from './state.js';
-import { Key } from './types.js';
+import { State } from './state'
+import { Key } from './types'
 
-export function explosion(state: State, keys: Key[]): void {
+export default function explosion(state: State, keys: Key[]): void {
   state.exploding = { stage: 1, keys };
   state.dom.redraw();
   setTimeout(() => {
